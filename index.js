@@ -1,4 +1,4 @@
-import { getTypeKey } from './lib/getTypeKey';
+import TypeKey from './lib/TypeKey';
 export default {
-    getTypeKey
+    TypeKey
 }
