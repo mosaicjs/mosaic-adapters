@@ -32,9 +32,9 @@ describe('TypeKey.getTypeKey', function() {
         expect(key).to.be(Symbol.for('Object/String'));
     });
     it('Key generation for a string', function() {
-        let key = TypeKey.getTypeKey('hello');
-        expect(Symbol.keyFor(key)).to.be('Object/String');
-        expect(key).to.be(Symbol.for('Object/String'));
+        let key = TypeKey.getTypeKey('Hello/World');
+        expect(Symbol.keyFor(key)).to.be('Hello/World');
+        expect(key).to.be(Symbol.for('Hello/World'));
     });
     it('Key generation for the Date basic type', function() {
         let key = TypeKey.getTypeKey(Date);
