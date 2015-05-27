@@ -92,7 +92,46 @@ describe('TypeKey.getTypeKey', function() {
         expect(handled).to.eql(true);
         expect(Symbol.keyFor(key)).to.be('Object/First/Second/Third');
         expect(key).to.be(Symbol.for('Object/First/Second/Third'));
-    });    
+    });
+    it('Use the getTypeKey method defined object classes', function(){
+        class First {
+            constructor(type){
+                if (type){
+                    this.typeKey = TypeKey.getTypeKey(type);
+                }
+            }
+            getTypeKey(){
+                if (this.typeKey) {
+                    return this.typeKey;
+                }
+                var key = TypeKey.getTypeKey.call(this);
+                var result = Symbol.for(Symbol.keyFor(key) + '/toto');
+                return result;
+            }
+        }
+        class Second extends First {
+        }
+        class Third extends Second {}
+        
+        let key;
+        let first = new First();
+        key = TypeKey.getTypeKey(first);
+        expect(Symbol.keyFor(key)).to.be('Object/First/toto');
+        expect(key).to.be(Symbol.for('Object/First/toto'));
+        
+        first = new First('hello');
+        expect(Symbol.keyFor(first.getTypeKey())).to.be('hello');
+        expect(first.getTypeKey()).to.be(Symbol.for('hello'));
+        
+        let third = new Third('world');
+        expect(Symbol.keyFor(third.getTypeKey())).to.be('world');
+        expect(third.getTypeKey()).to.be(Symbol.for('world'));
+        
+        third = new Third();
+        expect(Symbol.keyFor(third.getTypeKey())).to.be('Object/First/Second/Third/toto');
+        expect(third.getTypeKey()).to.be(Symbol.for('Object/First/Second/Third/toto'));
+        
+    });
 });
 describe('TypeKey.getParentTypeKey', function() {
     class First{}
