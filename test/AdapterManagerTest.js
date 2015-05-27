@@ -48,14 +48,6 @@ describe('AdapterManager', function() {
         let adapter = manager.getAdapter(obj, AdapterA);
         expect(adapter).to.be(b);
     });
-    it('should manage instance adapters (2)', function() {
-        let manager = new AdapterManager();
-        var b = new AdapterB();
-        manager.registerAdapter(First, AdapterA, b);
-        let obj = new Third();
-        let adapter = manager.getAdapter(obj, AdapterA);
-        expect(adapter).to.be(b);
-    });
     it('should be able to unregister adapter', function() {
         let manager = new AdapterManager();
         let obj = new Third();
