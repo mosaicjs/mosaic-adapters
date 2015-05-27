@@ -92,5 +92,14 @@ describe('AdapterManager', function() {
         expect(adapter.obj).to.be(obj);
         expect(adapter.adapterType).to.be('toto/titi/tata');
         expect(adapter.sayHello()).to.be('B');
-    });      
+    });
+    it('should manage class inheritance', function() {
+        let manager = new AdapterManager();
+        manager.registerAdapter(First, AdapterA);
+        manager.registerAdapter(Second, AdapterA, AdapterB);
+        expect(manager.newAdapter(new First(), AdapterA)).to.be.an(AdapterA);
+        expect(manager.newAdapter(new Second(), AdapterA)).to.be.an(AdapterB);
+        expect(manager.newAdapter(new Third(), AdapterA)).to.be.an(AdapterB);
+    });
+    
 });
