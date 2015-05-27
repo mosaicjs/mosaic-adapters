@@ -1,6 +1,6 @@
 {
   "name": "mosaic-adapters",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Adapters pattern implementation for ES6",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,5 @@
     "mocha": "^2.2.5",
     "webpack": "^1.9.10"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
