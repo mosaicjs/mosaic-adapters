@@ -219,7 +219,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var key = this._getKey(from, to);
 	            var result = this._adapters[key];
 	            delete this._adapters[key];
-	            delete this._cache[key];
+	            this._cache = {};
 	            return result;
 	        }
 	    }, {
@@ -292,18 +292,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                if (result === false) break;
 	                key = _TypeKey2['default'].getParentTypeKey(key);
 	            }
-	            return result;
-	        }
-	    }, {
-	        key: '_checkValidity',
-
-	        /**
-	         * Checks if option values are valid using validation methods on the
-	         * specified object
-	         */
-	        value: function _checkValidity(obj, options) {
-	            if (typeof obj.isValid !== 'function') return true;
-	            var result = obj.isValid(options);
 	            return result;
 	        }
 	    }]);
