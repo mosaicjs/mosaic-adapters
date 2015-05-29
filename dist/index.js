@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _libAdapterManager2 = _interopRequireDefault(_libAdapterManager);
 
-	var _libAdaptable = __webpack_require__(3);
+	var _libAdaptable = __webpack_require__(4);
 
 	var _libAdaptable2 = _interopRequireDefault(_libAdaptable);
 
@@ -151,7 +151,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	        array.pop();
 	        str = array.join('/');
 	        return str ? Symbol['for'](str) : null;
+	    },
+
+	    /**
+	     * Calls the specified function starting from the given to the top. If the
+	     * specified action returns the "false" value then this method interrupt
+	     * iterations.
+	     * 
+	     * @param return
+	     *            the result of the last call to the action
+	     */
+	    forEachKey: function forEachKey(key, action, context) {
+	        context = context || this;
+	        var i = 0;
+	        key = TypeKey.getTypeKey(key);
+	        var result = undefined;
+	        while (key) {
+	            result = action.call(context, key, i++);
+	            if (result === false) break;
+	            key = TypeKey.getParentTypeKey(key);
+	        }
+	        return result;
 	    }
+
 	};
 	exports['default'] = TypeKey;
 	module.exports = exports['default'];
@@ -176,18 +198,27 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _TypeKey2 = _interopRequireDefault(_TypeKey);
 
+	var _TypeIndex = __webpack_require__(3);
+
+	var _TypeIndex2 = _interopRequireDefault(_TypeIndex);
+
 	/**
 	 * An adapter manager used to register/retrieve objects corresponding to the
 	 * types of adaptable object and the types of the target object.
 	 */
 
 	var AdapterManager = (function () {
-	    function AdapterManager(options) {
+
+	    /**
+	     * Constructor of this class. Initializes index of adapters and an internal
+	     * cache.
+	     */
+
+	    function AdapterManager() {
 	        _classCallCheck(this, AdapterManager);
 
-	        options = options || {};
-	        this._adapters = {};
-	        this._cache = {};
+	        this._adapters = new _TypeIndex2['default']();
+	        this._cache = new _TypeIndex2['default']();
 	    }
 
 	    _createClass(AdapterManager, [{
@@ -207,38 +238,45 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (adapter === undefined) {
 	                adapter = to;
 	            }
-	            var key = this._getKey(from, to);
-	            this._adapters[key] = adapter || to;
-	            this._cache = {};
+	            var key = this._getAdapterKey(from, to);
+	            this._adapters.set(key, adapter || to);
+	            this._cache.clear();
 	        }
 	    }, {
 	        key: 'removeAdapter',
 
 	        /** Removes an adapter from one type to another. */
 	        value: function removeAdapter(from, to) {
-	            var key = this._getKey(from, to);
-	            var result = this._adapters[key];
-	            delete this._adapters[key];
-	            this._cache = {};
+	            var key = this._getAdapterKey(from, to);
+	            var result = this._adapters.del(key);
+	            this._cache.clear();
 	            return result;
 	        }
 	    }, {
 	        key: 'getAdapter',
 
-	        /** Returns an adapter of one object type to another type. */
+	        /**
+	         * Returns an adapter of one type to another type. This method caches
+	         * adapter for each unique combination of keys.
+	         * 
+	         * @param from
+	         *            the type of the adaptable object
+	         * @param to
+	         *            type of the adapter
+	         * @return
+	         */
 	        value: function getAdapter(from, to) {
-	            var cacheKey = this._getKey(from, to);
-	            var result = this._cache[cacheKey];
-	            if (!result && !(cacheKey in this._cache)) {
-	                this._forEachKey(from, function (f) {
-	                    this._forEachKey(to, function (t) {
-	                        var key = this._getKey(f, t);
-	                        result = this._adapters[key];
+	            var cacheKey = this._getAdapterKey(from, to);
+	            var result = this._cache.get(cacheKey);
+	            if (!result && !this._cache.has(cacheKey)) {
+	                _TypeKey2['default'].forEachKey(from, function (f) {
+	                    return _TypeKey2['default'].forEachKey(to, function (t) {
+	                        var key = this._getAdapterKey(f, t);
+	                        result = this._adapters.get(key);
 	                        return !result;
-	                    });
-	                    return !result;
-	                });
-	                this._cache[cacheKey] = result;
+	                    }, this);
+	                }, this);
+	                this._cache.set(cacheKey, result);
 	            }
 	            return result;
 	        }
@@ -249,6 +287,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * Creates and returns a new adapter from one type to another. If the
 	         * registered adapter is a function then it is used as constructor to create
 	         * a new object.
+	         * 
+	         * @param from
+	         *            key of the type of the object for which we want to find an
+	         *            adapter
+	         * @param to
+	         *            the key of the adapter
+	         * @param a
+	         *            new adapter instance
 	         */
 	        value: function newAdapter(from, to, options) {
 	            var result = null;
@@ -262,37 +308,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return result;
 	        }
 	    }, {
-	        key: '_getKey',
+	        key: '_getAdapterKey',
 
 	        /**
-	         * Returns a key used to find adapters of one type to another.
+	         * Returns a key used to find adapters from one type to another.
 	         * 
 	         * @param from
 	         *            the type of the adaptable object
 	         * @param to
 	         *            type of the target object
+	         * @return a new adapter key
 	         */
-	        value: function _getKey(from, to) {
+	        value: function _getAdapterKey(from, to) {
 	            var fromType = _TypeKey2['default'].getTypeKey(from);
 	            var toType = _TypeKey2['default'].getTypeKey(to);
-	            return Symbol.keyFor(fromType) + '::' + Symbol.keyFor(toType);
-	        }
-	    }, {
-	        key: '_forEachKey',
-
-	        /**
-	         * Calls the specified function starting from the given to the top
-	         */
-	        value: function _forEachKey(key, action) {
-	            var i = 0;
-	            key = _TypeKey2['default'].getTypeKey(key);
-	            var result = undefined;
-	            while (key) {
-	                result = action.call(this, key, i++);
-	                if (result === false) break;
-	                key = _TypeKey2['default'].getParentTypeKey(key);
-	            }
-	            return result;
+	            var key = Symbol.keyFor(fromType) + '::' + Symbol.keyFor(toType);
+	            return Symbol['for'](key);
 	        }
 	    }]);
 
@@ -304,6 +335,85 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var UNDEFINED = Symbol();
+	var NULL = Symbol();
+
+	var TypeIndex = (function () {
+	    function TypeIndex() {
+	        _classCallCheck(this, TypeIndex);
+
+	        this.index = {};
+	    }
+
+	    _createClass(TypeIndex, [{
+	        key: "set",
+	        value: function set(key, value) {
+	            if (!key) return this;
+	            this.index[key] = value === undefined ? UNDEFINED : value === null ? NULL : value;
+	            return this;
+	        }
+	    }, {
+	        key: "get",
+	        value: function get(key) {
+	            if (!key) return;
+	            var value = this.index[key];
+	            value = value === UNDEFINED ? undefined : value === NULL ? null : value;
+	            return value;
+	        }
+	    }, {
+	        key: "del",
+	        value: function del(key) {
+	            if (!key) return;
+	            var value = this.get(key);
+	            delete this.index[key];
+	            return value;
+	        }
+	    }, {
+	        key: "has",
+	        value: function has(key) {
+	            if (!key) return false;
+	            var val = this.index[key];
+	            return !!val;
+	        }
+	    }, {
+	        key: "clear",
+	        value: function clear() {
+	            this.index = {};
+	            return this;
+	        }
+	    }, {
+	        key: "keys",
+	        value: function keys() {
+	            return this.index.getOwnPropertySymbols();
+	        }
+	    }, {
+	        key: "empty",
+	        value: function empty() {
+	            var keys = this.keys();
+	            return !keys.length;
+	        }
+	    }]);
+
+	    return TypeIndex;
+	})();
+
+	exports["default"] = TypeIndex;
+	module.exports = exports["default"];
+
+/***/ },
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -322,49 +432,138 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _TypeKey2 = _interopRequireDefault(_TypeKey);
 
+	var _TypeIndex = __webpack_require__(3);
+
+	var _TypeIndex2 = _interopRequireDefault(_TypeIndex);
+
+	/**
+	 * A super-class for all adaptable object. Objects of this type use an internal
+	 * adapter manager to instantiate adapters and store them in an internal cache.
+	 */
+
 	var Adaptable = (function () {
+
+	    /**
+	     * Constructor of this class.
+	     * 
+	     * @param options.adapters
+	     *            a mandatory instance of the "AdapterManager" class
+	     */
+
 	    function Adaptable(options) {
 	        _classCallCheck(this, Adaptable);
 
-	        options = options || {};
-	        this.adapters = options.adapters;
+	        if (options) {
+	            this.adapters = options.adapters;
+	        }
 	    }
 
 	    _createClass(Adaptable, [{
-	        key: 'adapters',
-	        set: function (adapters) {
-	            this._adapters = adapters;
-	        },
-	        get: function () {
-	            return this._adapters;
-	        }
-	    }, {
 	        key: 'setAdapter',
+
+	        /**
+	         * Sets a new object adapter. This adapter is stored in an internal object
+	         * cache.
+	         * 
+	         * @param adapterType
+	         *            the type of the adapter to set
+	         * @param adapter
+	         *            a new adapter to set
+	         * @return this object
+	         */
 	        value: function setAdapter(adapterType, adapter) {
-	            var cache = this.__adapters = this.__adapters || {};
 	            if (adapter) {
-	                var key = _TypeKey2['default'].getTypeKey(adapterType);
-	                cache[key] = adapter;
+	                var cache = this._getAdaptersCache();
+	                var key = this._getAdapterCacheKey(adapterType);
+	                cache.set(key, adapter);
 	            }
 	            return this;
 	        }
 	    }, {
 	        key: 'getAdapter',
+
+	        /**
+	         * Returns an adapter for this object corresponding to the specified adapter
+	         * type. The resulting adapter is stored in an internal object-specific
+	         * adapter cache. To clear adapter cache use the "clearAdapters" method.
+	         * 
+	         * @param adapterType
+	         *            the type of the adapter to return
+	         * @param options
+	         *            options used to create a new adapter; if an adapter already
+	         *            exists then this parameter is ignored
+	         * @return an adapter instance (if any)
+	         */
 	        value: function getAdapter(adapterType, options) {
-	            var cache = this.__adapters = this.__adapters || {};
-	            var key = _TypeKey2['default'].getTypeKey(adapterType);
-	            var result = cache[key];
-	            if (!result) {
+	            var cache = this._getAdaptersCache();
+	            var key = this._getAdapterCacheKey(adapterType);
+	            var result = cache.get(key);
+	            if (!result && !cache.has(key)) {
 	                result = this.newAdapter(adapterType, options);
-	                cache[key] = result;
+	                cache.set(key, result);
 	            }
 	            return result;
 	        }
 	    }, {
 	        key: 'newAdapter',
+
+	        /**
+	         * Creates and returns a new adapter for this object.
+	         * 
+	         * @param adapterType
+	         *            the type of the adapter to create
+	         * @param options
+	         *            options used to create a new adapter; if an adapter already
+	         *            exists then it does not take into account
+	         * @return a newly created adapter instance
+	         */
 	        value: function newAdapter(adapterType, options) {
 	            var result = this.adapters.newAdapter(this, adapterType, options);
 	            return result;
+	        }
+	    }, {
+	        key: 'clearAdapters',
+
+	        /**
+	         * This method removes object adapters of the specified types. If types are
+	         * not defined then all cached adapters are removed.
+	         * 
+	         * @param adapterTypes
+	         *            a list of adapter types to remove from the cache
+	         */
+	        value: function clearAdapters(adapterTypes) {
+	            if (!this.__adapters) return;
+	            if (!adapterTypes || !adapterTypes.length) {
+	                delete this.__adapters;
+	            } else {
+	                for (var i = 0; i < adapterTypes.length; i++) {
+	                    var adapterType = adapterTypes[i];
+	                    var key = this._getAdapterCacheKey(adapterType);
+	                    this.__adapters.del(key);
+	                }
+	                if (this.__adapters.empty()) {
+	                    delete this.__adapters;
+	                }
+	            }
+	            return this;
+	        }
+	    }, {
+	        key: '_getAdaptersCache',
+
+	        /** Returns an internal object-specific adapters cache. */
+	        value: function _getAdaptersCache() {
+	            if (!this.__adapters) {
+	                this.__adapters = new _TypeIndex2['default']();
+	            }
+	            return this.__adapters;
+	        }
+	    }, {
+	        key: '_getAdapterCacheKey',
+
+	        /** Returns a cache key of the specified adapter type. */
+	        value: function _getAdapterCacheKey(adapterType) {
+	            var typeKey = _TypeKey2['default'].getTypeKey(adapterType);
+	            return Symbol.keyFor(typeKey);
 	        }
 	    }]);
 

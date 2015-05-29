@@ -57,11 +57,7 @@ describe('AdapterManager', function() {
         expect(adapter).to.be(b);
         manager.removeAdapter(First, AdapterA);
         adapter = manager.getAdapter(obj, AdapterA);
-        expect(adapter).to.be.eql({ 
-            options : {},
-            obj : undefined,
-            adapterType : undefined
-        });
+        expect(adapter).to.be(undefined);
     });
     it('should be able to instantiate adapters', function() {
         let manager = new AdapterManager();
