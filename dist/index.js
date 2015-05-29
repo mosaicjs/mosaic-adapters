@@ -304,12 +304,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	         */
 	        value: function newAdapter(from, to, options) {
 	            var result = null;
-	            var AdapterType = this.getAdapter(from, to);
+	            var adapter = this.getAdapter(from, to);
+	            var AdapterType = adapter || to;
 	            if (typeof AdapterType === 'function') {
 	                options = options || {};
 	                result = new AdapterType(options, from, to);
 	            } else {
-	                result = AdapterType;
+	                result = adapter;
 	            }
 	            return result;
 	        }
