@@ -73,13 +73,20 @@ describe('AdapterManager', function() {
     it('should be able manage adapters by string keys', function() {
         let manager = new AdapterManager();
         let obj = new Third();
-        manager.registerAdapter(First, 'toto', AdapterB);
-        let adapter = manager.newAdapter(obj, 'toto/titi/tata', { foo: 'Bar '});
+        class MyAdapter {
+            constructor(options, obj, adapterType){
+                this.id = MyAdapter.counter = (MyAdapter.counter || 0) + 1;
+                this.options = options;
+                this.obj = obj;
+                this.adapterType = adapterType;
+            }
+        }
+        manager.registerAdapter(First, 'toto/titi/tata', MyAdapter);
+        let adapter = manager.newAdapter(obj, 'toto/titi', { foo: 'Bar '});
         expect(adapter).to.not.be.empty();
         expect(adapter.options).to.be.eql({ foo: 'Bar '});
         expect(adapter.obj).to.be(obj);
-        expect(adapter.adapterType).to.be('toto/titi/tata');
-        expect(adapter.sayHello()).to.be('B');
+        expect(adapter.adapterType).to.be('toto/titi');
     });
     it('should manage class inheritance', function() {
         let manager = new AdapterManager();
@@ -89,5 +96,4 @@ describe('AdapterManager', function() {
         expect(manager.newAdapter(new Second(), AdapterA)).to.be.an(AdapterB);
         expect(manager.newAdapter(new Third(), AdapterA)).to.be.an(AdapterB);
     });
-    
 });

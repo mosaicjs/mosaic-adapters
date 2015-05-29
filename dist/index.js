@@ -238,8 +238,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (adapter === undefined) {
 	                adapter = to;
 	            }
-	            var key = this._getAdapterKey(from, to);
-	            this._adapters.set(key, adapter || to);
+	            _TypeKey2['default'].forEachKey(to, function (t) {
+	                var key = this._getAdapterKey(from, t);
+	                var slot = this._adapters.get(key);
+	                if (slot && slot.direct) return false;
+	                this._adapters.set(key, {
+	                    adapter: adapter,
+	                    direct: t === to
+	                });
+	            }, this);
 	            this._cache.clear();
 	        }
 	    }, {
@@ -248,9 +255,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        /** Removes an adapter from one type to another. */
 	        value: function removeAdapter(from, to) {
 	            var key = this._getAdapterKey(from, to);
-	            var result = this._adapters.del(key);
+	            var slot = this._adapters.del(key);
 	            this._cache.clear();
-	            return result;
+	            return slot ? slot.adapter : undefined;
 	        }
 	    }, {
 	        key: 'getAdapter',
@@ -270,11 +277,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var result = this._cache.get(cacheKey);
 	            if (!result && !this._cache.has(cacheKey)) {
 	                _TypeKey2['default'].forEachKey(from, function (f) {
-	                    return _TypeKey2['default'].forEachKey(to, function (t) {
-	                        var key = this._getAdapterKey(f, t);
-	                        result = this._adapters.get(key);
-	                        return !result;
-	                    }, this);
+	                    var key = this._getAdapterKey(f, to);
+	                    var slot = this._adapters.get(key);
+	                    result = slot ? slot.adapter : undefined;
+	                    return !result;
 	                }, this);
 	                this._cache.set(cacheKey, result);
 	            }

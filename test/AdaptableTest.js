@@ -22,25 +22,13 @@ class AdapterB extends AdapterA {
         return 'B';
     }
 }
-describe('Symbol', function() {
-   it('should be used as an object key', function(){
-       let first = Symbol.for('f/i/r::s.t');  
-       let second = Symbol.for('s/e/c::o.n.d');
-       var obj = {};
-       obj[first] = 'First';
-       obj[second] = 'Second';
-       expect(obj[first]).to.eql('First');
-       expect(obj[second]).to.eql('Second');
-       expect(obj[Symbol.for('s/e/c::o.n.d')]).to.be('Second');
-   });
-});
 
 describe('Adaptable', function() {
     it('should manage class adapters', function() {
-        let manager = new AdapterManager();
-        manager.registerAdapter(First, AdapterA);
-        manager.registerAdapter(Second, AdapterA, AdapterB);
-        let obj = new Third({ adapters : manager });
+        let adapters = new AdapterManager();
+        adapters.registerAdapter(First, AdapterA);
+        adapters.registerAdapter(Second, AdapterA, AdapterB);
+        let obj = new Third({adapters});
         let adapter = obj.getAdapter(AdapterA);
         expect(adapter).to.not.empty();
         expect(adapter).to.be.an(AdapterB);
@@ -51,7 +39,54 @@ describe('Adaptable', function() {
         secondAdapter = obj.clearAdapters().getAdapter(AdapterA);
         expect(secondAdapter).to.not.be(adapter);
         expect(secondAdapter.id).to.be.eql(adapter.id + 1);
-        
     });
+    it('should automatically create adapter instances from the adapter type', function(){
+        let adapters = new AdapterManager();
+        let third = new Third({adapters});
+        let adapter = third.getAdapter(AdapterB);
+        expect(adapter).to.be.an(AdapterB);
+    });    
+    it('should try to retrieve the most specific adapter first', function(){
+        // Classes to adapt
+        class GeoJsonResource extends Adaptable {}
+        class Transport extends GeoJsonResource {}
+        class Bus extends Transport{}
+        class BusStop extends Bus {}
+        class BusLine extends Bus {}
+        // Adapters
+        class MapLayer {}
+        class MapMarker extends MapLayer {}
+        class BusStopMarker extends MapMarker {}
+        class MapLine extends MapLayer {}
+        class BusMapLine extends MapLine {}
+        
+        let adapters = new AdapterManager();
+        adapters.registerAdapter(GeoJsonResource, MapLayer);
+        adapters.registerAdapter(BusStop, BusStopMarker);
+        adapters.registerAdapter(BusLine, BusMapLine);
+        
+        let adapter;
+        
+        let r = new GeoJsonResource({adapters});
+        adapter = r.getAdapter(MapLayer);
+        expect(adapter).to.be.an(MapLayer);
+        
+        let busStop = new BusStop({adapters});
+        adapter = busStop.getAdapter(MapLayer);
+        expect(adapter).to.be.an(MapLayer);
+        expect(adapter).to.be.an(BusStopMarker);
+        
+        let bus = new Bus({adapters});
+        adapter = bus.getAdapter(MapLayer);
+        expect(adapter).to.be.an(MapLayer);
+        expect(adapter).to.not.be.an(BusStopMarker);
 
+        let busLine = new BusLine({adapters});
+        adapter = busLine.getAdapter(MapLayer);
+        expect(adapter).to.be.an(MapLayer);
+        expect(adapter).to.be.an(BusMapLine);
+    });
+    
 });
+
+
