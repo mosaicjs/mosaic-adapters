@@ -474,7 +474,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function setAdapter(adapterType, adapter) {
 	            if (adapter) {
 	                var cache = this._getAdaptersCache();
-	                var key = this._getAdapterCacheKey(adapterType);
+	                var key = _TypeKey2['default'].getTypeKey(adapterType);
 	                cache.set(key, adapter);
 	            }
 	            return this;
@@ -496,7 +496,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	         */
 	        value: function getAdapter(adapterType, options) {
 	            var cache = this._getAdaptersCache();
-	            var key = this._getAdapterCacheKey(adapterType);
+	            var key = _TypeKey2['default'].getTypeKey(adapterType);
 	            var result = cache.get(key);
 	            if (!result && !cache.has(key)) {
 	                result = this.newAdapter(adapterType, options);
@@ -538,7 +538,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            } else {
 	                for (var i = 0; i < adapterTypes.length; i++) {
 	                    var adapterType = adapterTypes[i];
-	                    var key = this._getAdapterCacheKey(adapterType);
+	                    var key = _TypeKey2['default'].getTypeKey(adapterType);
 	                    this.__adapters.del(key);
 	                }
 	                if (this.__adapters.empty()) {
@@ -556,14 +556,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                this.__adapters = new _TypeIndex2['default']();
 	            }
 	            return this.__adapters;
-	        }
-	    }, {
-	        key: '_getAdapterCacheKey',
-
-	        /** Returns a cache key of the specified adapter type. */
-	        value: function _getAdapterCacheKey(adapterType) {
-	            var typeKey = _TypeKey2['default'].getTypeKey(adapterType);
-	            return Symbol.keyFor(typeKey);
 	        }
 	    }]);
 
