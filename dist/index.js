@@ -447,6 +447,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * A super-class for all adaptable object. Objects of this type use an internal
 	 * adapter manager to instantiate adapters and store them in an internal cache.
 	 */
+	var ADAPTERS = Symbol['for']('adapters');
 
 	var Adaptable = (function () {
 
@@ -466,6 +467,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    _createClass(Adaptable, [{
+	        key: 'adapters',
+
+	        /**
+	         * Returns reference to the internal adapters manager.
+	         */
+	        get: function () {
+	            return this[ADAPTERS];
+	        },
+
+	        /**
+	         * Sets a new adapter manager.
+	         */
+	        set: function (adapters) {
+	            this[ADAPTERS] = adapters;
+	        }
+	    }, {
 	        key: 'setAdapter',
 
 	        /**
