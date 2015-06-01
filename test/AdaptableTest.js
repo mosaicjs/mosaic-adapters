@@ -87,6 +87,15 @@ describe('Adaptable', function() {
         expect(adapter).to.be.an(BusMapLine);
     });
     
+    it('adaptable objects as adapter - ' + 
+            'they should take adapters from the parent', function(){
+        class AAdapter extends Adaptable {}
+        class BAdapter extends Adaptable {}
+        let adapters = new AdapterManager();
+        let third = new Third({adapters});
+        let a = third.getAdapter(AAdapter);
+        expect(a.adapters).to.be(adapters);
+    });
 });
 
 

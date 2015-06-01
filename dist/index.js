@@ -70,13 +70,18 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _libAdapterManager2 = _interopRequireDefault(_libAdapterManager);
 
-	var _libAdaptable = __webpack_require__(4);
+	var _libAdapter = __webpack_require__(4);
+
+	var _libAdapter2 = _interopRequireDefault(_libAdapter);
+
+	var _libAdaptable = __webpack_require__(5);
 
 	var _libAdaptable2 = _interopRequireDefault(_libAdaptable);
 
 	exports['default'] = {
 	    TypeKey: _libTypeKey2['default'],
 	    AdapterManager: _libAdapterManager2['default'],
+	    Adapter: _libAdapter2['default'],
 	    Adaptable: _libAdaptable2['default']
 	};
 	module.exports = exports['default'];
@@ -423,6 +428,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
+	/**
+	 * A super-class for adapters.
+	 */
 	'use strict';
 
 	Object.defineProperty(exports, '__esModule', {
@@ -431,9 +439,98 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	var KEY_FROM = Symbol['for']('_from');
+	var KEY_TO = Symbol['for']('_to');
+
+	var Adapter = (function () {
+
+	    /**
+	     * Constructor of this class.
+	     * 
+	     * @param options
+	     * @param from
+	     *            the adapter object
+	     * @param to
+	     *            the type of the adapter; this instance is used as an adapter
+	     *            for the specified type
+	     */
+
+	    function Adapter(options, from, to) {
+	        _classCallCheck(this, Adapter);
+
+	        this.adaptable = from;
+	        this.adapterType = to;
+	    }
+
+	    _createClass(Adapter, [{
+	        key: 'adaptable',
+
+	        /**
+	         * Returns reference to the main adapted object.
+	         */
+	        get: function () {
+	            return this[KEY_FROM];
+	        },
+
+	        /**
+	         * Sets a new adaptable object
+	         */
+	        set: function (adaptable) {
+	            if (adaptable !== undefined) {
+	                this[KEY_FROM] = adaptable;
+	            } else {
+	                delete this[KEY_FROM];
+	            }
+	        }
+	    }, {
+	        key: 'adapterType',
+
+	        /**
+	         * Returns the adaptable type.
+	         */
+	        get: function () {
+	            return this[KEY_TO];
+	        },
+
+	        /**
+	         * Sets a new adaptable object
+	         */
+	        set: function (type) {
+	            if (!!type) {
+	                this[KEY_TO] = type;
+	            } else {
+	                delete this[KEY_TO];
+	            }
+	        }
+	    }]);
+
+	    return Adapter;
+	})();
+
+	exports['default'] = Adapter;
+	module.exports = exports['default'];
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, '__esModule', {
+	    value: true
+	});
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
 
 	var _TypeKey = __webpack_require__(1);
 
@@ -443,28 +540,57 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _TypeIndex2 = _interopRequireDefault(_TypeIndex);
 
+	var _Adapter2 = __webpack_require__(4);
+
+	var _Adapter3 = _interopRequireDefault(_Adapter2);
+
 	/**
 	 * A super-class for all adaptable object. Objects of this type use an internal
 	 * adapter manager to instantiate adapters and store them in an internal cache.
 	 */
 	var ADAPTERS = Symbol['for']('adapters');
 
-	var Adaptable = (function () {
+	var Adaptable = (function (_Adapter) {
 
 	    /**
 	     * Constructor of this class.
 	     * 
 	     * @param options.adapters
 	     *            a mandatory instance of the "AdapterManager" class
+	     * @param from
+	     *            optional parent adaptable object; this parameter is defined
+	     *            only if this instance is used as an adapter itself for another
+	     *            object
+	     * @param to
+	     *            optional adapter type for the parent object; this parameter is
+	     *            defined only if this instance is used as an adapter itself for
+	     *            another object
 	     */
 
 	    function Adaptable(options) {
+	        var _get2;
+
+	        for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	            args[_key - 1] = arguments[_key];
+	        }
+
 	        _classCallCheck(this, Adaptable);
 
+	        (_get2 = _get(Object.getPrototypeOf(Adaptable.prototype), 'constructor', this)).call.apply(_get2, [this, options].concat(args));
+	        var adapters = undefined;
 	        if (options) {
-	            this.adapters = options.adapters;
+	            adapters = options.adapters;
 	        }
+	        if (!adapters) {
+	            // This object is used as an adapter itself.
+	            // So try to get the adapters from this parent object.
+	            var adaptable = this.adaptable;
+	            adapters = adaptable ? adaptable.adapters : undefined;
+	        }
+	        this.adapters = adapters;
 	    }
+
+	    _inherits(Adaptable, _Adapter);
 
 	    _createClass(Adaptable, [{
 	        key: 'adapters',
@@ -584,7 +710,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }]);
 
 	    return Adaptable;
-	})();
+	})(_Adapter3['default']);
 
 	exports['default'] = Adaptable;
 
