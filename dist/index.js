@@ -419,11 +419,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function removeAdapter(from, to) {
 	            var fromType = _TypeKey2['default'].getTypeKey(from);
 	            var toType = _TypeKey2['default'].getTypeKey(to);
-	            var key = this._getAdapterKey(fromType, toType);
-	            var slot = this._adapters[key];
-	            delete this._adapters[key];
+	            var result = undefined;
+	            toType.forEach(function (t) {
+	                var key = this._getAdapterKey(fromType, t);
+	                var slot = this._adapters[key];
+	                if (slot) {
+	                    var remove = undefined;
+	                    if (t === toType) {
+	                        result = slot.adapter;
+	                        remove = true;
+	                    } else {
+	                        if (slot.direct) return false;
+	                        remove = slot.adapter === result;
+	                    }
+	                    if (remove) {
+	                        delete this._adapters[key];
+	                    }
+	                }
+	            }, this);
 	            this._cache = {};
-	            return slot ? slot.adapter : undefined;
+	            return result;
 	        }
 	    }, {
 	        key: 'getAdapter',
@@ -448,7 +463,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    var key = this._getAdapterKey(f, toType);
 	                    var slot = this._adapters[key];
 	                    result = slot ? slot.adapter : undefined;
-	                    return !result;
+	                    if (result) return false;
 	                }, this);
 	                this._cache[cacheKey] = result;
 	            }
