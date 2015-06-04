@@ -399,15 +399,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (adapter === undefined) {
 	                adapter = to;
 	            }
-	            var fromKey = _TypeKey2['default']['for'](from);
-	            var toKey = _TypeKey2['default']['for'](to);
-	            toKey.forEach(function (t) {
-	                var key = this._getAdapterKey(fromKey, t);
+	            var fromType = _TypeKey2['default']['for'](from);
+	            var toType = _TypeKey2['default']['for'](to);
+	            toType.forEach(function (t) {
+	                var key = this._getAdapterKey(fromType, t);
 	                var slot = this._adapters[key];
 	                if (slot && slot.direct) return false;
 	                this._adapters[key] = {
 	                    adapter: adapter,
-	                    direct: t === toKey
+	                    direct: t === toType
 	                };
 	            }, this);
 	            this._cache = {};
@@ -417,7 +417,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	        /** Removes an adapter from one type to another. */
 	        value: function removeAdapter(from, to) {
-	            var key = this._getAdapterKey(from, to);
+	            var fromType = _TypeKey2['default'].getTypeKey(from);
+	            var toType = _TypeKey2['default'].getTypeKey(to);
+	            var key = this._getAdapterKey(fromType, toType);
 	            var slot = this._adapters[key];
 	            delete this._adapters[key];
 	            this._cache = {};
@@ -437,22 +439,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @return
 	         */
 	        value: function getAdapter(from, to) {
-	            var _this = this;
-
-	            var cacheKey = this._getAdapterKey(from, to);
+	            var fromType = _TypeKey2['default'].getTypeKey(from);
+	            var toType = _TypeKey2['default'].getTypeKey(to);
+	            var cacheKey = this._getAdapterKey(fromType, toType);
 	            var result = this._cache[cacheKey];
 	            if (!result && !(cacheKey in this._cache)) {
-	                (function () {
-	                    var fromKey = _TypeKey2['default']['for'](from);
-	                    var toKey = _TypeKey2['default']['for'](to);
-	                    fromKey.forEach(function (f) {
-	                        var key = this._getAdapterKey(f, toKey);
-	                        var slot = this._adapters[key];
-	                        result = slot ? slot.adapter : undefined;
-	                        return !result;
-	                    }, _this);
-	                    _this._cache[cacheKey] = result;
-	                })();
+	                fromType.forEach(function (f) {
+	                    var key = this._getAdapterKey(f, toType);
+	                    var slot = this._adapters[key];
+	                    result = slot ? slot.adapter : undefined;
+	                    return !result;
+	                }, this);
+	                this._cache[cacheKey] = result;
 	            }
 	            return result;
 	        }
@@ -497,9 +495,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @return a new adapter key
 	         */
 	        value: function _getAdapterKey(from, to) {
-	            var fromType = _TypeKey2['default'].getTypeKey(from);
-	            var toType = _TypeKey2['default'].getTypeKey(to);
-	            var key = fromType.id + ':' + toType.id;
+	            var key = from.id + ':' + to.id;
 	            return key;
 	        }
 	    }]);
