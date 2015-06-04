@@ -14,6 +14,14 @@ describe('TypeKey', function() {
             let secondKey = TypeKey.getClassKey(f);
             expect(firstKey).to.be(secondKey);
         });
+       it('should return a type key without modification', function(){
+           class MyClass{}
+           let key = TypeKey.getTypeKey(MyClass);
+           let first = TypeKey.getTypeKey(key);
+           let second = TypeKey.getTypeKey(new MyClass());
+           expect(first).to.be(key);
+           expect(second).to.be(key);
+       });
        it('should be able to generate different identifiers for functions with the same name', function(){
            let FirstType = (function(msg){
                function MyType(){
@@ -39,7 +47,7 @@ describe('TypeKey', function() {
            expect(firstId !== secondId).to.be(true);
            
            expect(firstKey).to.be('MyType');
-           expect(secondKey).to.be('MyType1');
+           expect(secondKey).to.be('MyType-1');
            expect(firstKey !== secondKey).to.be(true);
        }); 
        it('should be able to generate identifiers for anonymous functions', function(){

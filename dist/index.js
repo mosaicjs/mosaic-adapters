@@ -270,7 +270,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (!key) {
 	                // If the specified function do not have a name then we generate
 	                // a unique type key using the type identifier.
-	                key = 'Type' + typeId;
+	                key = 'Type-' + typeId;
 	            } else {
 	                // The specified function has a name.
 	                // We have to check that this name is unique and there is no
@@ -285,7 +285,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    ids.push(typeId);
 	                }
 	                if (pos !== 0) {
-	                    key = key + '' + pos;
+	                    key = key + '-' + pos;
 	                }
 	            }
 	            return key;
