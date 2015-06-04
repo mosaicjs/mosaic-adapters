@@ -70,11 +70,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _libAdapterManager2 = _interopRequireDefault(_libAdapterManager);
 
-	var _libAdapter = __webpack_require__(4);
+	var _libAdapter = __webpack_require__(3);
 
 	var _libAdapter2 = _interopRequireDefault(_libAdapter);
 
-	var _libAdaptable = __webpack_require__(5);
+	var _libAdaptable = __webpack_require__(4);
 
 	var _libAdaptable2 = _interopRequireDefault(_libAdaptable);
 
@@ -92,14 +92,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	/**
 	 * This object contains utility mix-in methods returning object types as a
-	 * Symbol instance. The main method in the mixin is "getTypeKey" which returns
-	 * type keys for classes, objects and strings. To build a type key for a class
-	 * this method uses class names of the specified class and all their parents.
-	 * For objects (class instances) this method uses the "getTypeKey" method if it
-	 * is defined on the object. If there is no such a method then the object type
-	 * (class) is used to get the key. The "getTypeKey" method can be used to
-	 * transform strings to type keys. Type keys form hierarchies using the "/"
-	 * symbol as a separator between individual type keys (Example:
+	 * TypeKey.Key instance. The main method in the mixin is "getTypeKey" which
+	 * returns type keys for classes, objects and strings. To build a type key for a
+	 * class this method uses class names of the specified class and all their
+	 * parents. For objects (class instances) this method uses the "getTypeKey"
+	 * method if it is defined on the object. If there is no such a method then the
+	 * object type (class) is used to get the key. The "getTypeKey" method can be
+	 * used to transform strings to type keys. Type keys form hierarchies using the
+	 * "/" symbol as a separator between individual type keys (Example:
 	 * "Art/AbstractArt/Cubism" is a child of "Art/AbstractArt"). The
 	 * TypeKey.getTypeParentKey method can be used to get parent type key.
 	 */
@@ -108,79 +108,239 @@ return /******/ (function(modules) { // webpackBootstrap
 	Object.defineProperty(exports, '__esModule', {
 	    value: true
 	});
-	var TypeKey = {
 
-	    /**
-	     * Returns the type for the specified object. If the object is not defined
-	     * then this method uses 'this' instead. If the specified parameter is a
-	     * function then the key type is defined for the hierarchy of classes. If
-	     * the given object contains a 'getTypeKey' method then it is used instead.
-	     */
-	    getTypeKey: function getTypeKey(obj) {
-	        if (!obj) {
-	            obj = this;
-	        } else if (typeof obj.getTypeKey === 'function') {
-	            return obj.getTypeKey();
-	        }
-	        if (obj instanceof Symbol) return obj;
-	        var key = undefined;
-	        if (typeof obj === 'string') {
-	            key = obj;
-	        } else {
-	            var proto;
-	            if (typeof obj === 'function') {
-	                proto = obj.prototype;
-	            } else {
-	                proto = Object.getPrototypeOf(obj);
-	            }
-	            var array = [];
-	            while (proto) {
-	                array.push(proto.constructor.name);
-	                proto = Object.getPrototypeOf(proto);
-	            }
-	            array.reverse();
-	            key = array.join('/');
-	        }
-	        return Symbol['for'](key);
-	    },
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-	    /**
-	     * Returns a key for the parent type.
-	     */
-	    getParentTypeKey: function getParentTypeKey(key) {
-	        if (!(key instanceof Symbol)) {
-	            key = TypeKey.getTypeKey.apply(this, key);
-	        }
-	        var str = Symbol.keyFor(key);
-	        var array = str.split('/');
-	        array.pop();
-	        str = array.join('/');
-	        return str ? Symbol['for'](str) : null;
-	    },
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-	    /**
-	     * Calls the specified function starting from the given to the top. If the
-	     * specified action returns the "false" value then this method interrupt
-	     * iterations.
-	     * 
-	     * @param return
-	     *            the result of the last call to the action
-	     */
-	    forEachKey: function forEachKey(key, action, context) {
-	        context = context || this;
-	        var i = 0;
-	        key = TypeKey.getTypeKey(key);
-	        var result = undefined;
-	        while (key) {
-	            result = action.call(context, key, i++);
-	            if (result === false) break;
-	            key = TypeKey.getParentTypeKey(key);
-	        }
-	        return result;
+	var typeCounter = 0;
+	var keyCounter = 0;
+	var keyIndex = {};
+	var typeIndex = {};
+
+	var TypeKey = (function () {
+	    function TypeKey(str) {
+	        _classCallCheck(this, TypeKey);
+
+	        this.id = typeCounter++;
+	        this.key = str ? str + '' : '';
 	    }
 
-	};
+	    _createClass(TypeKey, [{
+	        key: 'segments',
+
+	        /**
+	         * Returns an array of string segments of this key
+	         */
+	        get: function () {
+	            return getKeySegmentsFromString(this.key);
+	        }
+	    }, {
+	        key: 'parent',
+
+	        /**
+	         * Returns a key for the parent type.
+	         */
+	        get: function () {
+	            return this.getParentKey();
+	        }
+	    }, {
+	        key: 'getParentKey',
+	        value: function getParentKey() {
+	            var segments = this.segments;
+	            segments.pop();
+	            var key = getKeyFromSegments(segments);
+	            return key;
+	        }
+	    }, {
+	        key: 'getChildKey',
+
+	        /**
+	         * Returns a type key for a child type.
+	         */
+	        value: function getChildKey(segments) {
+	            var array = getKeySegmentsFromString(segments);
+	            if (!array.length) return null;
+	            array = this.segments.concat(array);
+	            var key = getKeyFromSegments(array);
+	            return key;
+	        }
+	    }, {
+	        key: 'forEach',
+
+	        /**
+	         * Calls the specified function starting from the given to the top. If the
+	         * specified action returns the "false" value then this method interrupt
+	         * iterations.
+	         * 
+	         * @param return
+	         *            the result of the last call to the action
+	         */
+	        value: function forEach(action, context) {
+	            var i = 0;
+	            var array = this.segments;
+	            var result = undefined;
+	            while (array.length) {
+	                var k = i === 0 ? this : getKeyFromSegments(array);
+	                result = action.call(context, k, i++);
+	                if (result === false) break;
+	                array.pop();
+	            }
+	            return result;
+	        }
+	    }], [{
+	        key: 'fromString',
+
+	        // ---------------------------------------------------------------------
+	        // Public static methods and fields
+	        // ---------------------------------------------------------------------
+
+	        value: function fromString(str) {
+	            var key = keyIndex[str];
+	            if (!key) {
+	                key = keyIndex[str] = new TypeKey(str);
+	            }
+	            return key;
+	        }
+	    }, {
+	        key: 'for',
+
+	        /**
+	         * Returns the type for the specified object. If the object is not defined
+	         * then this method uses 'this' instead. If the specified parameter is a
+	         * function then the key type is defined for the hierarchy of classes. If
+	         * the given object contains a 'getTypeKey' method then it is used instead.
+	         */
+	        value: function _for(obj) {
+	            return TypeKey.getTypeKey(obj);
+	        }
+	    }, {
+	        key: 'getTypeKey',
+	        value: function getTypeKey(obj) {
+	            if (!obj) {
+	                obj = this;
+	            } else if (typeof obj.getTypeKey === 'function') {
+	                return obj.getTypeKey();
+	            }
+	            var key = undefined;
+	            if (obj instanceof TypeKey) {
+	                key = obj.key;
+	            } else if (typeof obj === 'string') {
+	                key = obj;
+	            } else {
+	                var proto = undefined;
+	                if (typeof obj === 'function') {
+	                    proto = obj.prototype;
+	                } else {
+	                    proto = Object.getPrototypeOf(obj);
+	                }
+	                var array = [];
+	                while (proto) {
+	                    var classKey = TypeKey.getClassKey(proto.constructor);
+	                    array.push(classKey);
+	                    proto = Object.getPrototypeOf(proto);
+	                }
+	                array.reverse();
+	                key = array.join('/');
+	            }
+	            return TypeKey.fromString(key);
+	        }
+	    }, {
+	        key: 'getClassId',
+
+	        /**
+	         * Returns a unique identifier of this class.
+	         */
+	        value: function getClassId(cls, create) {
+	            var typeId = cls.__type_id;
+	            if (!typeId && create !== false) {
+	                typeId = cls.__type_id = ++typeCounter;
+	            }
+	            return typeId;
+	        }
+	    }, {
+	        key: 'getClassKey',
+
+	        /**
+	         * Returns a unique string key for the specified type (JS function).
+	         */
+	        value: function getClassKey(cls) {
+	            var typeId = TypeKey.getClassId(cls);
+	            var key = cls.name;
+	            if (!key) {
+	                // If the specified function do not have a name then we generate
+	                // a unique type key using the type identifier.
+	                key = 'Type' + typeId;
+	            } else {
+	                // The specified function has a name.
+	                // We have to check that this name is unique and there is no
+	                // collision with an another function. Another function has
+	                // a different type identifier.
+	                var ids = typeIndex[key] = typeIndex[key] || [];
+	                // Use a binary search to find our type ID in the list of existing.
+	                // We can use a binary search because the ids array is ordered.
+	                var pos = binarySearch(ids, typeId);
+	                if (pos < 0) {
+	                    pos = ids.length;
+	                    ids.push(typeId);
+	                }
+	                if (pos !== 0) {
+	                    key = key + '' + pos;
+	                }
+	            }
+	            return key;
+	        }
+	    }, {
+	        key: 'reset',
+
+	        /**
+	         * This method resets the internal index of types. It is used only for
+	         * debugging and test purposes.
+	         */
+	        value: function reset() {
+	            typeIndex = {};
+	        }
+	    }]);
+
+	    return TypeKey;
+	})();
+
 	exports['default'] = TypeKey;
+
+	function binarySearch(array, value) {
+	    var min = 0;
+	    var max = array.length - 1;
+	    var idx = undefined;
+	    var val = undefined;
+	    while (min <= max) {
+	        idx = min + max >> 1;
+	        val = array[idx];
+	        if (val < value) {
+	            min = idx + 1;
+	        } else if (val > value) {
+	            max = idx - 1;
+	        } else {
+	            return idx;
+	        }
+	    }
+	    return -1;
+	}
+
+	/**
+	 * Returns a new type key by joining all segments from the specified array.
+	 */
+	function getKeyFromSegments(array) {
+	    var str = array.join('/');
+	    return str ? TypeKey.fromString(str) : null;
+	}
+
+	/**
+	 * Returns an array of key segments
+	 */
+	function getKeySegmentsFromString(key) {
+	    if (!key) return [];
+	    return (key + '').split('/');
+	}
 	module.exports = exports['default'];
 
 /***/ },
@@ -203,10 +363,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _TypeKey2 = _interopRequireDefault(_TypeKey);
 
-	var _TypeIndex = __webpack_require__(3);
-
-	var _TypeIndex2 = _interopRequireDefault(_TypeIndex);
-
 	/**
 	 * An adapter manager used to register/retrieve objects corresponding to the
 	 * types of adaptable object and the types of the target object.
@@ -222,8 +378,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function AdapterManager() {
 	        _classCallCheck(this, AdapterManager);
 
-	        this._adapters = new _TypeIndex2['default']();
-	        this._cache = new _TypeIndex2['default']();
+	        this._adapters = {};
+	        this._cache = {};
 	    }
 
 	    _createClass(AdapterManager, [{
@@ -243,16 +399,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (adapter === undefined) {
 	                adapter = to;
 	            }
-	            _TypeKey2['default'].forEachKey(to, function (t) {
-	                var key = this._getAdapterKey(from, t);
-	                var slot = this._adapters.get(key);
+	            var fromKey = _TypeKey2['default']['for'](from);
+	            var toKey = _TypeKey2['default']['for'](to);
+	            toKey.forEach(function (t) {
+	                var key = this._getAdapterKey(fromKey, t);
+	                var slot = this._adapters[key];
 	                if (slot && slot.direct) return false;
-	                this._adapters.set(key, {
+	                this._adapters[key] = {
 	                    adapter: adapter,
-	                    direct: t === to
-	                });
+	                    direct: t === toKey
+	                };
 	            }, this);
-	            this._cache.clear();
+	            this._cache = {};
 	        }
 	    }, {
 	        key: 'removeAdapter',
@@ -260,8 +418,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        /** Removes an adapter from one type to another. */
 	        value: function removeAdapter(from, to) {
 	            var key = this._getAdapterKey(from, to);
-	            var slot = this._adapters.del(key);
-	            this._cache.clear();
+	            var slot = this._adapters[key];
+	            delete this._adapters[key];
+	            this._cache = {};
 	            return slot ? slot.adapter : undefined;
 	        }
 	    }, {
@@ -278,16 +437,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	         * @return
 	         */
 	        value: function getAdapter(from, to) {
+	            var _this = this;
+
 	            var cacheKey = this._getAdapterKey(from, to);
-	            var result = this._cache.get(cacheKey);
-	            if (!result && !this._cache.has(cacheKey)) {
-	                _TypeKey2['default'].forEachKey(from, function (f) {
-	                    var key = this._getAdapterKey(f, to);
-	                    var slot = this._adapters.get(key);
-	                    result = slot ? slot.adapter : undefined;
-	                    return !result;
-	                }, this);
-	                this._cache.set(cacheKey, result);
+	            var result = this._cache[cacheKey];
+	            if (!result && !(cacheKey in this._cache)) {
+	                (function () {
+	                    var fromKey = _TypeKey2['default']['for'](from);
+	                    var toKey = _TypeKey2['default']['for'](to);
+	                    fromKey.forEach(function (f) {
+	                        var key = this._getAdapterKey(f, toKey);
+	                        var slot = this._adapters[key];
+	                        result = slot ? slot.adapter : undefined;
+	                        return !result;
+	                    }, _this);
+	                    _this._cache[cacheKey] = result;
+	                })();
 	            }
 	            return result;
 	        }
@@ -334,8 +499,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function _getAdapterKey(from, to) {
 	            var fromType = _TypeKey2['default'].getTypeKey(from);
 	            var toType = _TypeKey2['default'].getTypeKey(to);
-	            var key = Symbol.keyFor(fromType) + '::' + Symbol.keyFor(toType);
-	            return Symbol['for'](key);
+	            var key = fromType.id + ':' + toType.id;
+	            return key;
 	        }
 	    }]);
 
@@ -347,85 +512,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var UNDEFINED = Symbol();
-	var NULL = Symbol();
-
-	var TypeIndex = (function () {
-	    function TypeIndex() {
-	        _classCallCheck(this, TypeIndex);
-
-	        this.index = {};
-	    }
-
-	    _createClass(TypeIndex, [{
-	        key: "set",
-	        value: function set(key, value) {
-	            if (!key) return this;
-	            this.index[key] = value === undefined ? UNDEFINED : value === null ? NULL : value;
-	            return this;
-	        }
-	    }, {
-	        key: "get",
-	        value: function get(key) {
-	            if (!key) return;
-	            var value = this.index[key];
-	            value = value === UNDEFINED ? undefined : value === NULL ? null : value;
-	            return value;
-	        }
-	    }, {
-	        key: "del",
-	        value: function del(key) {
-	            if (!key) return;
-	            var value = this.get(key);
-	            delete this.index[key];
-	            return value;
-	        }
-	    }, {
-	        key: "has",
-	        value: function has(key) {
-	            if (!key) return false;
-	            var val = this.index[key];
-	            return !!val;
-	        }
-	    }, {
-	        key: "clear",
-	        value: function clear() {
-	            this.index = {};
-	            return this;
-	        }
-	    }, {
-	        key: "keys",
-	        value: function keys() {
-	            return this.index.getOwnPropertySymbols();
-	        }
-	    }, {
-	        key: "empty",
-	        value: function empty() {
-	            var keys = this.keys();
-	            return !keys.length;
-	        }
-	    }]);
-
-	    return TypeIndex;
-	})();
-
-	exports["default"] = TypeIndex;
-	module.exports = exports["default"];
-
-/***/ },
-/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -513,7 +599,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -536,11 +622,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _TypeKey2 = _interopRequireDefault(_TypeKey);
 
-	var _TypeIndex = __webpack_require__(3);
-
-	var _TypeIndex2 = _interopRequireDefault(_TypeIndex);
-
-	var _Adapter2 = __webpack_require__(4);
+	var _Adapter2 = __webpack_require__(3);
 
 	var _Adapter3 = _interopRequireDefault(_Adapter2);
 
@@ -625,7 +707,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (adapter) {
 	                var cache = this._getAdaptersCache();
 	                var key = _TypeKey2['default'].getTypeKey(adapterType);
-	                cache.set(key, adapter);
+	                cache[key.id] = adapter;
 	            }
 	            return this;
 	        }
@@ -647,10 +729,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        value: function getAdapter(adapterType, options) {
 	            var cache = this._getAdaptersCache();
 	            var key = _TypeKey2['default'].getTypeKey(adapterType);
-	            var result = cache.get(key);
-	            if (!result && !cache.has(key)) {
+	            var result = cache[key.id];
+	            if (!result && !(key.id in cache)) {
 	                result = this.newAdapter(adapterType, options);
-	                cache.set(key, result);
+	                cache[key.id] = result;
 	            }
 	            return result;
 	        }
@@ -689,9 +771,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	                for (var i = 0; i < adapterTypes.length; i++) {
 	                    var adapterType = adapterTypes[i];
 	                    var key = _TypeKey2['default'].getTypeKey(adapterType);
-	                    this.__adapters.del(key);
+	                    delete this.__adapters[key.id];
 	                }
-	                if (this.__adapters.empty()) {
+	                if (!Object.keys(this.__adapters).length) {
 	                    delete this.__adapters;
 	                }
 	            }
@@ -703,7 +785,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        /** Returns an internal object-specific adapters cache. */
 	        value: function _getAdaptersCache() {
 	            if (!this.__adapters) {
-	                this.__adapters = new _TypeIndex2['default']();
+	                this.__adapters = {};
 	            }
 	            return this.__adapters;
 	        }
