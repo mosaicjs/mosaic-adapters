@@ -92,14 +92,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	/**
 	 * This object contains utility mix-in methods returning object types as a
-	 * TypeKey.Key instance. The main method in the mixin is "getTypeKey" which
-	 * returns type keys for classes, objects and strings. To build a type key for a
-	 * class this method uses class names of the specified class and all their
-	 * parents. For objects (class instances) this method uses the "getTypeKey"
-	 * method if it is defined on the object. If there is no such a method then the
-	 * object type (class) is used to get the key. The "getTypeKey" method can be
-	 * used to transform strings to type keys. Type keys form hierarchies using the
-	 * "/" symbol as a separator between individual type keys (Example:
+	 * TypeKey instance. The main method in the mixin is "getTypeKey" which returns
+	 * type keys for classes, objects and strings. To build a type key for a class
+	 * this method uses class names of the specified class and all their parents.
+	 * For objects (class instances) this method uses the "getTypeKey" method if it
+	 * is defined on the object. If there is no such a method then the object type
+	 * (class) is used to get the key. The "getTypeKey" method can be used to
+	 * transform strings to type keys. Type keys form hierarchies using the "/"
+	 * symbol as a separator between individual type keys (Example:
 	 * "Art/AbstractArt/Cubism" is a child of "Art/AbstractArt"). The
 	 * TypeKey.getTypeParentKey method can be used to get parent type key.
 	 */
@@ -196,6 +196,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        // ---------------------------------------------------------------------
 
 	        value: function fromString(str) {
+	            if (!str) return null;
 	            var key = keyIndex[str];
 	            if (!key) {
 	                key = keyIndex[str] = new TypeKey(str);
