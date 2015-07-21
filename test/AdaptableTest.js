@@ -96,6 +96,21 @@ describe('Adaptable', function() {
         let a = third.getAdapter(AAdapter);
         expect(a.adapters).to.be(adapters);
     });
+    
+    it('should be able to provide a clean ', function(){
+        class Base extends Adaptable {}
+        class SubClass extends Base { }
+        
+        class MyAdapter {}
+        class AdapterOne extends MyAdapter {}
+
+        let adapters = new AdapterManager();
+        adapters.registerAdapter(SubClass, MyAdapter, AdapterOne);
+        
+        let item = new SubClass({adapters});
+        let adapter = item.getAdapter(MyAdapter);
+        expect(adapter instanceof AdapterOne).to.be(true);
+    });
 });
 
 

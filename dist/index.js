@@ -88,7 +88,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/**
 	 * This object contains utility mix-in methods returning object types as a
@@ -524,7 +524,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	/**
 	 * A super-class for adapters.
